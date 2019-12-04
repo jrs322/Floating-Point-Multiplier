@@ -24,21 +24,30 @@ module floating_point_multiplication(clk, input_a, input_b, product);
   end
 endmodule 
 
-module exponent_calc(expo_a, expo_b, expo_out);
+module exponent_calc(expo_a, expo_b, expo_out, );
   input[7:0] expo_a, expo_b;
   output[7:0] expo_out;
+  assign expo_out = sum;
+  reg[7:0] sum;
+  always @(expo_a or expo_b) begin
+    sum = (expo_a + expo_b) - 7'b1111111;
+  end 
 endmodule
 
-module mantissa_multiplier(mant_a, mant_b, mant_p);
+module mantissa_multiplier(mant_a, mant_b, mant_p, done);
   input[23:0] mant_a, mant_b;
   output[23:0] mant_p;
+  output done;
   reg[47:0] p_reg;
   reg[4:0] counter;
-  assign
+  reg done_r;
+  assign mant_p = p_reg[47:24];
   always @(mant_a or mant_b)
     begin
+      done_r <= 1'b0;
       for(counter = 24'b0; counter < 24; counter = counter + 1'b1) begin
         if( multiplier[counter] == 1'b1 ) product = product + ( multiplicand << counter );
+      done_r <= 1'b1;
       end
     end
 endmodule
