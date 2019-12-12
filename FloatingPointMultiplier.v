@@ -1,53 +1,34 @@
-//check for zeroes
-//add the exponents and subtract 127
-//check for over/underflow
-//multiply the mantissas
-//normalize the sign of the result
-//round the result
-module floating_point_multiplication(clk, input_a, input_b, product);
-  input[31:0] input_a. input_b;
-  input clk;
+module floating_point_multiplication(input_a, input_b, product, underflow, overflow);
+  input[31:0] input_a, input_b;
+  output underflow, overflow;
   output[31:0] product;
-  wire[7:0] exponent_a, exponent_b;
-  wire sign_a, sign_b;
-  wire[23:0] mantissa_a, mantissa_b;
-  reg[31:0] product_reg;
-  reg[7:0] exponent_sum;
-  assign mantissa_a = {1'b1, input_a[23:0]};
-  assign mantissa_b = {1'b1, input_b[23:0]};
-  always@(posedge clk) begin
-    if (input_a ==32'b0 or input_b==32'b0)
-      product_reg = 32'b0;
-    else begin
-      
-    end
+  wire[7:0] exponent_a, exponent_b, exponent_sum, final_exponent, error_check_exponent;
+  wire sign_a, sign_b, sign_final, zero_a, zero_b;
+  wire[23:0] mantissa_a, mantissa_b; 
+  wire[22:0] final_mantissa;
+  wire[47:0] mantissa_prod;
+  assign zero_a = ~(|input_a);
+  assign zero_b = ~(|input_b);
+  assign mantissa_a[23] = 1'b1;
+  assign mantissa_b[23] = 1'b1;
+  assign {sign_a, exponent_a, mantissa_a[22:0]} = input_a;
+  assign {sign_b, exponent_b, mantissa_b[22:0]} = input_b;
+  assign sign_final = sign_a ^ sign_b;
+  assign mantissa_prod = (mantissa_a * mantissa_b) + 1'b1;
+  assign exponent_sum = exponent_a + exponent_b - 8'd127;
+  assign final_mantissa = mantissa_prod[47] ? mantissa_prod[47:24] : mantissa_prod[46:23] + 1'b1;
+  assign final_exponent = mantissa_prod[47] ? exponent_sum + 1 : exponent_sum;
+  assign overflow = (exponent_a[7] & exponent_b[7]) & ~final_exponent[7];
+  assign underflow = (~exponent_b[7] & ~exponent_a[7] & final_exponent[7]);
+  assign error_check_exponent = underflow ? (overflow ? final_exponent : 8'b0) : (overflow ? 8'b11111111 : final_exponent);
+  assign product = (zero_a | zero_b) ? 32'b0 : {sign_final, error_check_exponent, final_mantissa};
+  always @(product) begin
+    $display("product_sign: %b product_exponent: %b product_mantissa: %b overflow: %b underflow: %b mantissa_prod: %b", product[31], product[30:23], product[22:0], overflow, underflow, mantissa_prod[47]);
   end
+  always @(input_a or input_b)
+    $display("a_sign: %b a_exponent: %b a_mantissa: %b zero_a: %b",input_a[31], input_a[30:23], input_a[22:0], zero_a);
+  always @(input_b or input_a)
+    $display("b_sign: %b b_exponent: %b b_mantissa: %b zero_b: %b",input_b[31], input_b[30:23], input_b[22:0], zero_b);
+    
 endmodule 
 
-module exponent_calc(expo_a, expo_b, expo_out, );
-  input[7:0] expo_a, expo_b;
-  output[7:0] expo_out;
-  assign expo_out = sum;
-  reg[7:0] sum;
-  always @(expo_a or expo_b) begin
-    sum = (expo_a + expo_b) - 7'b1111111;
-  end 
-endmodule
-
-module mantissa_multiplier(mant_a, mant_b, mant_p, done);
-  input[23:0] mant_a, mant_b;
-  output[23:0] mant_p;
-  output done;
-  reg[47:0] p_reg;
-  reg[4:0] counter;
-  reg done_r;
-  assign mant_p = p_reg[47:24];
-  always @(mant_a or mant_b)
-    begin
-      done_r <= 1'b0;
-      for(counter = 24'b0; counter < 24; counter = counter + 1'b1) begin
-        if( multiplier[counter] == 1'b1 ) product = product + ( multiplicand << counter );
-      done_r <= 1'b1;
-      end
-    end
-endmodule
