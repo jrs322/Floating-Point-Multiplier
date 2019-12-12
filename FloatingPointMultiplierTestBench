@@ -1,0 +1,26 @@
+module TestBench_Floating();
+  reg[31:0] a, b;
+  wire[31:0] prod;
+  wire[7:0] a_e, b_e, p_e;
+  wire[22:0] a_m, b_m, p_m;
+  wire a_s, b_, p_s;
+  integer i;
+  assign {a_s, a_e, a_m} = a;
+  assign {b_s, b_e, b_m} = b;
+  floating_point_multiplication multiplier(a, b, {p_s, p_e, p_m}, underflow, overflow);
+  initial begin
+    a = 32'b0;
+    b = 32'b0;
+    #100;
+    for(i=0; i < 20; i = i + 1) begin
+      #100;
+      a=$random;
+      #100;
+      b=$random;
+      #100;
+      #100;
+    end
+  end
+  always @(posedge underflow or posedge overflow)
+    $display("Error detected, UNDR: %b OVRFLOW: %b", underflow, overflow);
+endmodule
